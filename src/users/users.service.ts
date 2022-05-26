@@ -33,13 +33,11 @@ export class UsersService {
 
   getUserById(id: number): User {
     const { user } = this.findUserAndIndex(id);
-    if (!user) throw new BadRequestException('user does not exist');
     return { ...user };
   }
 
   updateUserById(id: number, body: QueryUserDto): User {
-    const { user, index } = this.findUserAndIndex(id);
-    if (!user) throw new BadRequestException('user does not exist');
+    const { index } = this.findUserAndIndex(id);
     Object.entries(body).forEach(([key, value]) => {
       this.users[index][key] = value;
     });
@@ -47,8 +45,7 @@ export class UsersService {
   }
 
   deleteUserById(id: number): { userId: number; deleted: boolean } {
-    const { user, index } = this.findUserAndIndex(id);
-    if (!user) throw new BadRequestException('user does not exist');
+    const { index } = this.findUserAndIndex(id);
     this.users.splice(index, 1);
     return { userId: id, deleted: true };
   }
@@ -57,6 +54,9 @@ export class UsersService {
     userId: number,
   ): { user: User; index: number } => {
     const index = this.users.findIndex((user) => user.id === userId);
+    if (index === -1) {
+      throw new BadRequestException('user does not exist');
+    }
     return { user: this.users[index], index };
   };
 }
