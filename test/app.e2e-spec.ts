@@ -16,6 +16,7 @@ describe('App e2e', () => {
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
+        transform: true,
       }),
     );
     await app.init();
@@ -36,7 +37,14 @@ describe('App e2e', () => {
 
     // create user
     describe('1. everyone can create a user by name and email', () => {
-      it('a. if email format does not match /^\\S\\S$/, return Bad Request', () => {
+      it('a. should get empty users', () => {
+        return pactum
+          .spec()
+          .get('/users')
+          .expectStatus(200)
+          .expectBody([]);
+      });
+      it('b. if email format does not match /^\\S\\S$/, return Bad Request', () => {
         return pactum
           .spec()
           .post('/users')
@@ -47,7 +55,7 @@ describe('App e2e', () => {
           .expectStatus(400)
           .expectBodyContains('Bad Request');
       });
-      it('b. if email or name is empty, return Bad Request', () => {
+      it('c. if email or name is empty, return Bad Request', () => {
         return pactum
           .spec()
           .post('/users')
@@ -58,7 +66,7 @@ describe('App e2e', () => {
           .expectStatus(400)
           .expectBodyContains('Bad Request');
       });
-      it('c. should return status code 201, and return data with id when success', () => {
+      it('d. should return status code 201, and return data with id when success', () => {
         return pactum
           .spec()
           .post('/users')
@@ -66,6 +74,13 @@ describe('App e2e', () => {
           .expectStatus(201)
           .stores('newUserId', 'id')
           .expectBodyContains('$S{newUserId}');
+      });
+      it('e. should have one user in user list', () => {
+        return pactum
+          .spec()
+          .get('/users')
+          .expectStatus(200)
+          .expectJsonLength(1);
       });
     });
 
@@ -83,7 +98,7 @@ describe('App e2e', () => {
           .spec()
           .get('/users/$S{newUserId}')
           .expectStatus(200)
-          .expectBody({ ...dto, id: 'S${newUserId}' });
+          .expectBody({ ...dto, id: '$S{newUserId}' });
       });
     });
 
@@ -95,7 +110,7 @@ describe('App e2e', () => {
           .get(`/users`)
           .withQueryParams('email', dto.email)
           .expectStatus(200)
-          .expectBody([{ ...dto, id: 'S${newUserId}' }]);
+          .expectBody([{ ...dto, id: '$S{newUserId}' }]);
       });
       it('b. use query string to specify name', () => {
         return pactum
@@ -103,7 +118,7 @@ describe('App e2e', () => {
           .get(`/users`)
           .withQueryParams('name', dto.name)
           .expectStatus(200)
-          .expectBody([{ ...dto, id: 'S${newUserId}' }]);
+          .expectBody([{ ...dto, id: '$S{newUserId}' }]);
       });
       it('c. if email format does not match `/^\\S@\\S$/`, return Bad Request', () => {
         return pactum
@@ -141,13 +156,12 @@ describe('App e2e', () => {
           .expectBodyContains('Bad Request');
       });
       it('c. should return status code 200, and return new user data when success', () => {
-        pactum
+        return pactum
           .spec()
           .patch(`/users/$S{newUserId}`)
           .withBody({ ...editedDto })
           .expectStatus(200)
-          .expectBody([{ ...editedDto, id: 'S${newUserId}' }]);
-        return;
+          .expectBody({ ...editedDto, id: '$S{newUserId}' });
       });
     });
 
@@ -160,12 +174,18 @@ describe('App e2e', () => {
           .expectStatus(400)
           .expectBodyContains('Bad Request');
       });
-      it('b. should return status code 204 when success', () => {
-        pactum
+      it('b. should return status code 200 when success', () => {
+        return pactum
           .spec()
           .delete(`/users/$S{newUserId}`)
-          .expectStatus(204);
-        return;
+          .expectStatus(200);
+      });
+      it('c. should get empty users', () => {
+        return pactum
+          .spec()
+          .get('/users')
+          .expectStatus(200)
+          .expectBody([]);
       });
     });
   });
