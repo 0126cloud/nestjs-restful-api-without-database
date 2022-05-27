@@ -36,6 +36,8 @@ describe('App e2e', () => {
     app.close();
   });
 
+  const TOKEN = 'wool';
+
   describe('Basic requirements', () => {
     const dto: CreateUserDto = {
       email: 'e2etest@test.com',
@@ -43,11 +45,12 @@ describe('App e2e', () => {
     };
 
     // create user
-    describe('1. everyone can create a user by name and email', () => {
+    describe('1. everyone(wool) can create a user by name and email', () => {
       it('a. if email format does not match /^\\S\\S$/, return Bad Request', () => {
         return pactum
           .spec()
           .post('/users')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({
             email: 'test-email',
             name: dto.name,
@@ -58,6 +61,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/users')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({
             email: dto.email,
             name: '',
@@ -68,6 +72,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/users')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...dto })
           .expectStatus(201)
           .stores('newUserId', 'id')
@@ -117,7 +122,7 @@ describe('App e2e', () => {
     });
 
     // edit single user
-    describe("4. everyone can edit user's name and user's email by user id", () => {
+    describe("4. everyone(wool) can edit user's name and user's email by user id", () => {
       const editedDto: CreateUserDto = {
         email: 'test-edit@email.com',
         name: 'test-edit',
@@ -126,6 +131,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .patch(`/users/5555`)
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...editedDto })
           .expectStatus(400);
       });
@@ -133,6 +139,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .patch('/users/$S{newUserId}')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({
             email: 'test-email',
             name: editedDto.name,
@@ -143,6 +150,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .patch(`/users/$S{newUserId}`)
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...editedDto })
           .expectStatus(200)
           .expectBody({ ...editedDto, id: '$S{newUserId}' });
@@ -150,14 +158,19 @@ describe('App e2e', () => {
     });
 
     // delete single user
-    describe('5. everyone can delete a user by user id', () => {
+    describe('5. everyone(wool) can delete a user by user id', () => {
       it('a. if the user does not exist, return Bad Request', () => {
-        return pactum.spec().delete(`/users/5555`).expectStatus(400);
+        return pactum
+          .spec()
+          .delete(`/users/5555`)
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
+          .expectStatus(400);
       });
       it('b. should return status code 200 when success', () => {
         return pactum
           .spec()
           .delete(`/users/$S{newUserId}`)
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .expectStatus(200);
       });
       it('c. should get Bad Request when query the same user id', () => {
@@ -208,11 +221,12 @@ describe('App e2e', () => {
     });
 
     // create single enrollment
-    describe('7. everyone can enroll a user to a course by user id, course id and role', () => {
+    describe('7. everyone(wool) can enroll a user to a course by user id, course id and role', () => {
       it('a. if the user does not exist, return Bad Request', () => {
         return pactum
           .spec()
           .post('/enrollments')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...enrollDto, userId: 5555 })
           .expectStatus(400);
       });
@@ -220,6 +234,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/enrollments')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...enrollDto, courseId: 5555 })
           .expectStatus(400);
       });
@@ -227,6 +242,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/enrollments')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...enrollDto, role: 'stranger' })
           .expectStatus(400);
       });
@@ -234,6 +250,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/enrollments')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .withBody({ ...enrollDto })
           .expectStatus(201)
           .stores('newEnrollmentId', 'id')
@@ -245,17 +262,19 @@ describe('App e2e', () => {
     });
 
     // delete single enrollment by id
-    describe('8. everyone can withdraw a user by enrollment id', () => {
+    describe('8. everyone(wool) can withdraw a user by enrollment id', () => {
       it('c. if the enrollment does not exist, return Bad Request', () => {
         return pactum
           .spec()
           .delete('/enrollments/5555')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .expectStatus(400);
       });
       it('c. should return status code 200 when success', () => {
         return pactum
           .spec()
           .delete('/enrollments/$S{newEnrollmentId}')
+          .withHeaders('Authorization', `Bearer ${TOKEN}`)
           .expectStatus(200);
       });
     });
@@ -335,6 +354,34 @@ describe('App e2e', () => {
           .get(`/users/${userId}/courses`)
           .expectStatus(200)
           .expectJsonLike(res);
+      });
+    });
+  });
+
+  describe('Advance requirements (use Bearer Auth token Header and token is `wool`)', () => {
+    // user
+    describe('13. only admin `wool` can create, edit, delete a user', () => {
+      it('a. create user -> if token is invalid, return Unauthorized', () => {
+        return pactum.spec().post('/users').expectStatus(401);
+      });
+      it('a. edit user -> if token is invalid, return Unauthorized', () => {
+        return pactum.spec().patch('/users/1').expectStatus(401);
+      });
+      it('a. delete user -> if token is invalid, return Unauthorized', () => {
+        return pactum.spec().delete('/users/1').expectStatus(401);
+      });
+    });
+
+    // enrollment
+    describe('14. only admin `wool` can create, delete an enrollment', () => {
+      it('a. create enrollment -> if token is invalid, return Unauthorized', () => {
+        return pactum.spec().post('/enrollments').expectStatus(401);
+      });
+      it('a. delete enrollment -> if token is invalid, return Unauthorized', () => {
+        return pactum
+          .spec()
+          .delete('/enrollments/1')
+          .expectStatus(401);
       });
     });
   });
