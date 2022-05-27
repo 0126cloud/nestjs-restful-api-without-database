@@ -2,7 +2,7 @@
 
 #### run `npm run start` to start the server on port `3999`
 
-you can see all the available routes on swagger (http://localhost:3999/api)
+after that, you can see all the available routes on swagger (http://localhost:3999/api)
 
 #### run `npm run start:dev` to start the server and watch for changes
 
