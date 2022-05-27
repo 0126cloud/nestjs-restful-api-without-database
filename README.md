@@ -2,7 +2,7 @@
 
 #### how to use
 
-**_local_**
+> local
 
 - clone this project
 - run `npm install` to install all the packages
@@ -10,7 +10,7 @@
 - open http://localhost
 - you can see all the available routes on swagger (http://localhost/api)
 
-**_production_**
+> production
 
 the project is host on http://20.210.73.119
 
