@@ -10,4 +10,4 @@ you can see all the available routes on swagger (http://localhost:3999/api)
 
 happy testing :)
 
-<img src="https://github.com/0126cloud/nestjs-restful-api-without-database/blob/develop/public/e2e-test.png" alt="drawing" width="300"/>
+<img src="https://github.com/0126cloud/nestjs-restful-api-without-database/blob/develop/public/e2e-test.png" alt="drawing" width="600"/>
