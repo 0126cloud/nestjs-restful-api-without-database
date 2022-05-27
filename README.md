@@ -2,11 +2,17 @@
 
 #### how to use
 
+**_local_**
+
 - clone this project
 - run `npm install` to install all the packages
-- run `npm run start` to start the server on port `3999`
-- open http://localhost:3999
-- you can see all the available routes on swagger (http://localhost:3999/api)
+- run `npm run start` to start the server on port `80`
+- open http://localhost
+- you can see all the available routes on swagger (http://localhost/api)
+
+**_production_**
+
+the project is host on http://20.210.73.119
 
 #### run `npm run start:dev` to start the server and watch for changes
 
