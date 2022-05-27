@@ -1,6 +1,14 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import {
+  defaultCourses,
+  enrollmentsGroupByCourse,
+  mockEnrollments,
+  mockUsers,
+} from '../dataset';
 import * as pactum from 'pactum';
+import { EnrollDto } from '../src/enrollments/dto';
+import { Role } from '../src/enrollments/enrollment';
 import { AppModule } from '../src/app.module';
 import { CreateUserDto } from '../src/users/dto/create-user.dto';
 
@@ -29,7 +37,7 @@ describe('App e2e', () => {
     app.close();
   });
 
-  describe('User', () => {
+  describe('Basic requirements', () => {
     const dto: CreateUserDto = {
       email: 'test@gmail.com',
       name: 'test',
@@ -184,6 +192,177 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get('/users')
+          .expectStatus(200)
+          .expectBody([]);
+      });
+    });
+  });
+
+  describe('Bonus requirements', () => {
+    const enrollDto: EnrollDto = {
+      userId: 1,
+      courseId: 1,
+      role: Role.STUDENT,
+    };
+
+    beforeAll(async () => {
+      await pactum
+        .spec()
+        .post('/users')
+        .withBody(mockUsers)
+        .expectStatus(201);
+      await pactum
+        .spec()
+        .post('/enrollments')
+        .withBody(mockEnrollments)
+        .expectStatus(201);
+    });
+
+    // get users who join the same course
+    describe('6. everyone can query users by course id', () => {
+      it('a. check if enrollment data exists', () => {
+        return pactum
+          .spec()
+          .get('/enrollments')
+          .expectStatus(200)
+          .expectBody(mockEnrollments);
+      });
+      it('b. if the course does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .get('/courses/5555/users')
+          .expectStatus(400)
+          .expectBodyContains('Bad Request');
+      });
+      it('c. should return status code 200, and only return users who join the course', () => {
+        return pactum
+          .spec()
+          .post('/courses/1/users')
+          .expectStatus(200)
+          .expectBody([]);
+      });
+    });
+
+    // create single enrollment
+    describe('7. everyone can enroll a user to a course by user id, course id and role', () => {
+      it('a. if the user does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .post('/enrollments')
+          .withBody({ ...enrollDto, userId: 5555 })
+          .expectBodyContains('Bad Request');
+      });
+      it('b. if the course does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .post('/enrollments')
+          .withBody({ ...enrollDto, courseId: 5555 })
+          .expectBodyContains('Bad Request');
+      });
+      it('c. if the role does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .post('/enrollments')
+          .withBody({ ...enrollDto, role: 'stranger' })
+          .expectBodyContains('Bad Request');
+      });
+      it('b. should return status code 200, and return user data when success', () => {
+        return pactum
+          .spec()
+          .post('/enrollments')
+          .withBody({ ...enrollDto })
+          .expectStatus(201)
+          .stores('newEnrollmentId', 'id')
+          .expectBody({ ...enrollDto, id: '$S{newEnrollmentId}' });
+      });
+    });
+
+    // delete single enrollment by id
+    describe('8. everyone can withdraw a user by enrollment id', () => {
+      it('c. if the enrollment does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .delete('/enrollments/5555')
+          .expectStatus(400)
+          .expectBodyContains('Bad Request');
+      });
+      it('c. should return status code 200 when success', () => {
+        return pactum
+          .spec()
+          .delete('/enrollments/$S{newEnrollmentId}')
+          .expectStatus(200);
+      });
+    });
+
+    // get single enrollment
+    describe('9. everyone can get an enrollment by enrollment id', () => {
+      it('a. if the enrollment does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .get('/enrollments/5555')
+          .expectStatus(400)
+          .expectBodyContains('Bad Request');
+      });
+      it("b. should return status code 200, and return the enrollment's data when success", () => {
+        return pactum.spec().get('/enrollments/1').expectStatus(200);
+      });
+    });
+
+    // get enrollment(s) by query
+    describe('10. everyone can query enrollments by user id, course id or role', () => {
+      it('a. use query string to specify course id', () => {
+        const { courseId } = mockEnrollments[0];
+        return pactum
+          .spec()
+          .get(`/enrollments`)
+          .withQueryParams('courseId', courseId)
+          .expectStatus(200)
+          .expectBody(enrollmentsGroupByCourse[courseId]);
+      });
+      it('b. use query string to specify user id, course id and role', () => {
+        const { courseId, userId, role } = mockEnrollments[0];
+        return pactum
+          .spec()
+          .get(`/enrollments`)
+          .withQueryParams('courseId', courseId)
+          .withQueryParams('userId', userId)
+          .withQueryParams('role', role)
+          .expectStatus(200)
+          .expectBody([mockEnrollments[0]]);
+      });
+    });
+
+    // get single course by id
+    describe('11. everyone can get a course by course id', () => {
+      it('a. if the course does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .get(`/courses/5555`)
+          .expectStatus(400)
+          .expectBodyContains('Bad Request');
+      });
+      it("b. should return status code 200, and return the course's data when success", () => {
+        return pactum
+          .spec()
+          .get(`/courses/${defaultCourses[0].id}`)
+          .expectStatus(200)
+          .expectBody(defaultCourses[0]);
+      });
+    });
+
+    // get courses by user id
+    describe('12. everyone can query courses by user id', () => {
+      it('a. if the user does not exist, return Bad Request', () => {
+        return pactum
+          .spec()
+          .get(`/users/5555/courses`)
+          .expectStatus(400)
+          .expectBodyContains('Bad Request');
+      });
+      it("b. should return status code 200, and return the course's data when success", () => {
+        return pactum
+          .spec()
+          .get(`/users/${mockEnrollments[0].userId}/courses`)
           .expectStatus(200)
           .expectBody([]);
       });
