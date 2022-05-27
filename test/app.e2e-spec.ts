@@ -2,7 +2,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import {
   defaultCourses,
-  enrollmentsGroupByCourse,
   mockEnrollments,
   mockUsers,
 } from '../dataset';
@@ -10,7 +9,7 @@ import * as pactum from 'pactum';
 import { EnrollDto } from '../src/enrollments/dto';
 import { Role } from '../src/enrollments/enrollment';
 import { AppModule } from '../src/app.module';
-import { CreateUserDto } from '../src/users/dto/create-user.dto';
+import { CreateUserDto } from '../src/users/dto/create.dto';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -39,20 +38,13 @@ describe('App e2e', () => {
 
   describe('Basic requirements', () => {
     const dto: CreateUserDto = {
-      email: 'test@gmail.com',
-      name: 'test',
+      email: 'e2etest@test.com',
+      name: 'e2etest',
     };
 
     // create user
     describe('1. everyone can create a user by name and email', () => {
-      it('a. should get empty users', () => {
-        return pactum
-          .spec()
-          .get('/users')
-          .expectStatus(200)
-          .expectBody([]);
-      });
-      it('b. if email format does not match /^\\S\\S$/, return Bad Request', () => {
+      it('a. if email format does not match /^\\S\\S$/, return Bad Request', () => {
         return pactum
           .spec()
           .post('/users')
@@ -60,10 +52,9 @@ describe('App e2e', () => {
             email: 'test-email',
             name: dto.name,
           })
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
-      it('c. if email or name is empty, return Bad Request', () => {
+      it('b. if email or name is empty, return Bad Request', () => {
         return pactum
           .spec()
           .post('/users')
@@ -71,10 +62,9 @@ describe('App e2e', () => {
             email: dto.email,
             name: '',
           })
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
-      it('d. should return status code 201, and return data with id when success', () => {
+      it('c. should return status code 201, and return data with id when success', () => {
         return pactum
           .spec()
           .post('/users')
@@ -83,23 +73,12 @@ describe('App e2e', () => {
           .stores('newUserId', 'id')
           .expectBodyContains('$S{newUserId}');
       });
-      it('e. should have one user in user list', () => {
-        return pactum
-          .spec()
-          .get('/users')
-          .expectStatus(200)
-          .expectJsonLength(1);
-      });
     });
 
     // get single user by id
     describe('2. everyone can get a user by user id', () => {
       it('a. if the user does not exist, return Bad Request', () => {
-        return pactum
-          .spec()
-          .get('/users/5555')
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+        return pactum.spec().get('/users/5555').expectStatus(400);
       });
       it('b. should return status code 200, and return user data when success', () => {
         return pactum
@@ -133,8 +112,7 @@ describe('App e2e', () => {
           .spec()
           .get('/users')
           .withQueryParams('email', 'test-email')
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
     });
 
@@ -149,8 +127,7 @@ describe('App e2e', () => {
           .spec()
           .patch(`/users/5555`)
           .withBody({ ...editedDto })
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('b. if email format does not match `/^\\S@\\S$/`, return Bad Request', () => {
         return pactum
@@ -160,8 +137,7 @@ describe('App e2e', () => {
             email: 'test-email',
             name: editedDto.name,
           })
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('c. should return status code 200, and return new user data when success', () => {
         return pactum
@@ -176,11 +152,7 @@ describe('App e2e', () => {
     // delete single user
     describe('5. everyone can delete a user by user id', () => {
       it('a. if the user does not exist, return Bad Request', () => {
-        return pactum
-          .spec()
-          .delete(`/users/5555`)
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+        return pactum.spec().delete(`/users/5555`).expectStatus(400);
       });
       it('b. should return status code 200 when success', () => {
         return pactum
@@ -188,35 +160,21 @@ describe('App e2e', () => {
           .delete(`/users/$S{newUserId}`)
           .expectStatus(200);
       });
-      it('c. should get empty users', () => {
+      it('c. should get Bad Request when query the same user id', () => {
         return pactum
           .spec()
-          .get('/users')
-          .expectStatus(200)
-          .expectBody([]);
+          .get('/users/$S{newUserId}')
+          .expectStatus(400);
       });
     });
   });
 
   describe('Bonus requirements', () => {
     const enrollDto: EnrollDto = {
-      userId: 1,
-      courseId: 1,
+      userId: 4,
+      courseId: 5,
       role: Role.STUDENT,
     };
-
-    beforeAll(async () => {
-      await pactum
-        .spec()
-        .post('/users')
-        .withBody(mockUsers)
-        .expectStatus(201);
-      await pactum
-        .spec()
-        .post('/enrollments')
-        .withBody(mockEnrollments)
-        .expectStatus(201);
-    });
 
     // get users who join the same course
     describe('6. everyone can query users by course id', () => {
@@ -225,21 +183,27 @@ describe('App e2e', () => {
           .spec()
           .get('/enrollments')
           .expectStatus(200)
-          .expectBody(mockEnrollments);
+          .expectJsonLike(mockEnrollments);
       });
       it('b. if the course does not exist, return Bad Request', () => {
         return pactum
           .spec()
           .get('/courses/5555/users')
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('c. should return status code 200, and only return users who join the course', () => {
+        const { courseId } = mockEnrollments[0];
+        const userIds = mockEnrollments
+          .filter((item) => item.courseId === courseId)
+          .map((item) => item.userId);
+        const res = mockUsers.filter((item) =>
+          userIds.includes(item.id),
+        );
         return pactum
           .spec()
-          .post('/courses/1/users')
+          .get(`/courses/${courseId}/users`)
           .expectStatus(200)
-          .expectBody([]);
+          .expectJsonLike(res);
       });
     });
 
@@ -250,30 +214,33 @@ describe('App e2e', () => {
           .spec()
           .post('/enrollments')
           .withBody({ ...enrollDto, userId: 5555 })
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('b. if the course does not exist, return Bad Request', () => {
         return pactum
           .spec()
           .post('/enrollments')
           .withBody({ ...enrollDto, courseId: 5555 })
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('c. if the role does not exist, return Bad Request', () => {
         return pactum
           .spec()
           .post('/enrollments')
           .withBody({ ...enrollDto, role: 'stranger' })
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
-      it('b. should return status code 200, and return user data when success', () => {
+      it('b. should return status code 201, and return user data when success', () => {
         return pactum
           .spec()
           .post('/enrollments')
           .withBody({ ...enrollDto })
           .expectStatus(201)
           .stores('newEnrollmentId', 'id')
-          .expectBody({ ...enrollDto, id: '$S{newEnrollmentId}' });
+          .expectJsonLike({
+            ...enrollDto,
+            id: '$S{newEnrollmentId}',
+          });
       });
     });
 
@@ -283,8 +250,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .delete('/enrollments/5555')
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it('c. should return status code 200 when success', () => {
         return pactum
@@ -300,8 +266,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get('/enrollments/5555')
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it("b. should return status code 200, and return the enrollment's data when success", () => {
         return pactum.spec().get('/enrollments/1').expectStatus(200);
@@ -312,12 +277,15 @@ describe('App e2e', () => {
     describe('10. everyone can query enrollments by user id, course id or role', () => {
       it('a. use query string to specify course id', () => {
         const { courseId } = mockEnrollments[0];
+        const res = mockEnrollments.filter(
+          (item) => item.courseId === courseId,
+        );
         return pactum
           .spec()
           .get(`/enrollments`)
           .withQueryParams('courseId', courseId)
           .expectStatus(200)
-          .expectBody(enrollmentsGroupByCourse[courseId]);
+          .expectJsonLike(res);
       });
       it('b. use query string to specify user id, course id and role', () => {
         const { courseId, userId, role } = mockEnrollments[0];
@@ -328,25 +296,21 @@ describe('App e2e', () => {
           .withQueryParams('userId', userId)
           .withQueryParams('role', role)
           .expectStatus(200)
-          .expectBody([mockEnrollments[0]]);
+          .expectJsonLike([mockEnrollments[0]]);
       });
     });
 
     // get single course by id
     describe('11. everyone can get a course by course id', () => {
       it('a. if the course does not exist, return Bad Request', () => {
-        return pactum
-          .spec()
-          .get(`/courses/5555`)
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+        return pactum.spec().get(`/courses/5555`).expectStatus(400);
       });
       it("b. should return status code 200, and return the course's data when success", () => {
         return pactum
           .spec()
           .get(`/courses/${defaultCourses[0].id}`)
           .expectStatus(200)
-          .expectBody(defaultCourses[0]);
+          .expectJsonLike(defaultCourses[0]);
       });
     });
 
@@ -356,15 +320,21 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get(`/users/5555/courses`)
-          .expectStatus(400)
-          .expectBodyContains('Bad Request');
+          .expectStatus(400);
       });
       it("b. should return status code 200, and return the course's data when success", () => {
+        const { userId } = mockEnrollments[0];
+        const courseIds = mockEnrollments
+          .filter((item) => item.userId === userId)
+          .map((item) => item.courseId);
+        const res = defaultCourses.filter((item) =>
+          courseIds.includes(item.id),
+        );
         return pactum
           .spec()
-          .get(`/users/${mockEnrollments[0].userId}/courses`)
+          .get(`/users/${userId}/courses`)
           .expectStatus(200)
-          .expectBody([]);
+          .expectJsonLike(res);
       });
     });
   });

@@ -5,17 +5,12 @@ export class QueryEnrollmentDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @IsOptional()
-  id?: string;
+  userId?: number;
 
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @IsOptional()
-  userId?: string;
-
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
-  @IsOptional()
-  courseId?: string;
+  courseId?: number;
 
   @IsString()
   @IsOptional()

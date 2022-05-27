@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { mockEnrollments } from '../../dataset';
 import { EnrollDto, QueryEnrollmentDto } from './dto';
 import { Enrollment } from './enrollment';
 
 @Injectable()
 export class EnrollmentsService {
-  private enrollments: Enrollment[] = [];
+  private enrollments: Enrollment[] = mockEnrollments;
 
   enrollUser(body: EnrollDto): Enrollment {
     const { userId, courseId, role } = body;
@@ -45,7 +46,7 @@ export class EnrollmentsService {
       (enroll) => enroll.id === enrollId,
     );
     if (index === -1) {
-      throw new BadRequestException('user does not exist');
+      throw new BadRequestException('enrollment does not exist');
     }
     return { enrollments: this.enrollments[index], index };
   };
