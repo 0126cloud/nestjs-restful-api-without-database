@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Course, defaultCourses } from './course';
+import { defaultCourses } from '../../dataset';
+import { Course } from './course';
 
 @Injectable()
 export class CoursesService {
-  private courses: Course[] = defaultCourses;
+  private readonly courses: Course[] = defaultCourses;
 
   getCourseById = (courseId: number): Course => {
     const course = this.findCourseById(courseId);
