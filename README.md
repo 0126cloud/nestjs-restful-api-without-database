@@ -1,5 +1,7 @@
 ### NTU Cool Interview
 
+---
+
 #### how to use
 
 > local
@@ -13,6 +15,8 @@
 > production
 
 the project is host on http://20.210.73.119
+
+---
 
 #### run `npm run start:dev` to start the server and watch for changes
 
