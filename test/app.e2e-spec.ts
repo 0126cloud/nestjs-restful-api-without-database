@@ -6,7 +6,7 @@ import {
   mockUsers,
 } from '../dataset';
 import * as pactum from 'pactum';
-import { EnrollDto } from '../src/enrollments/dto';
+import { EnrollUserDto } from '../src/enrollments/dto';
 import { Role } from '../src/enrollments/enrollment';
 import { AppModule } from '../src/app.module';
 import { CreateUserDto } from '../src/users/dto/create.dto';
@@ -183,7 +183,7 @@ describe('App e2e', () => {
   });
 
   describe('Bonus requirements', () => {
-    const enrollDto: EnrollDto = {
+    const enrollDto: EnrollUserDto = {
       userId: 4,
       courseId: 5,
       role: Role.STUDENT,

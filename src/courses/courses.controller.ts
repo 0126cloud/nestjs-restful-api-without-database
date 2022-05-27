@@ -3,7 +3,9 @@ import { CoursesService } from './courses.service';
 import { ParseParamIdDto } from '../dto';
 import { UsersService } from '../users/users.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { ApiParam, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('course')
 @Controller('courses')
 export class CoursesController {
   constructor(
@@ -17,11 +19,13 @@ export class CoursesController {
     return this.service.getCourses();
   }
 
+  @ApiParam({ name: 'id', type: 'number' })
   @Get(':id')
   async getCourseById(@Param() param: ParseParamIdDto) {
     return this.service.getCourseById(param.id);
   }
 
+  @ApiParam({ name: 'id', type: 'number' })
   @Get(':id/users')
   async getUsersByCourseId(@Param() param: ParseParamIdDto) {
     this.service.getCourseById(param.id);

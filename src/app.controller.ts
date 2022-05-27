@@ -1,20 +1,15 @@
-import { Controller, Get, Request } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('root')
 @Controller('')
 export class AppController {
   @Get()
-  async getRoutes(@Request() req: any) {
-    const router: { stack: [] } = req.app._router;
+  async getRoutes() {
     return {
-      routes: router.stack
-        .map((layer: any) => {
-          if (layer.route) {
-            const path = layer.route?.path;
-            const method = layer.route?.stack[0].method;
-            return `${method.toUpperCase()} ${path}`;
-          }
-        })
-        .filter((item) => item !== undefined),
+      title: 'NTU Cool Interview',
+      message: 'go to /api to use open api',
+      sincerely: 'Thank you',
     };
   }
 }

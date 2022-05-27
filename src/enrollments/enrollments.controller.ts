@@ -12,10 +12,12 @@ import {
 import { CoursesService } from '../courses/courses.service';
 import { UsersService } from '../users/users.service';
 import { ParseParamIdDto } from '../dto';
-import { EnrollDto, QueryEnrollmentDto } from './dto';
+import { EnrollUserDto, QueryEnrollmentDto } from './dto';
 import { EnrollmentsService } from './enrollments.service';
 import { BearerAuthGuard } from '../auth/bearerAuth.guard';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('enrollment')
 @Controller('enrollments')
 export class EnrollmentsController {
   constructor(
@@ -29,14 +31,16 @@ export class EnrollmentsController {
     return this.service.getEnrollmentsWithQuery(query);
   }
 
+  @ApiParam({ name: 'id', type: 'number' })
   @Get(':id')
   async getEnrollmentById(@Param() param: ParseParamIdDto) {
     return this.service.getEnrollmentById(param.id);
   }
 
+  @ApiBearerAuth()
   @UseGuards(BearerAuthGuard)
   @Post()
-  async enrollUser(@Body() body: EnrollDto) {
+  async enrollUser(@Body() body: EnrollUserDto) {
     const { userId, courseId } = body;
     this.userService.getUserById(userId);
     this.courseService.getCourseById(courseId);
@@ -51,6 +55,8 @@ export class EnrollmentsController {
     return this.service.enrollUser(body);
   }
 
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: 'number' })
   @UseGuards(BearerAuthGuard)
   @Delete(':id')
   async withdrawUser(@Param() param: ParseParamIdDto) {

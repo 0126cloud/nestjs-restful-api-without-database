@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { mockEnrollments } from '../../dataset';
-import { EnrollDto, QueryEnrollmentDto } from './dto';
+import { EnrollUserDto, QueryEnrollmentDto } from './dto';
 import { Enrollment } from './enrollment';
 
 @Injectable()
 export class EnrollmentsService {
   private enrollments: Enrollment[] = mockEnrollments;
 
-  enrollUser(body: EnrollDto): Enrollment {
+  enrollUser(body: EnrollUserDto): Enrollment {
     const { userId, courseId, role } = body;
     const lastItem = this.enrollments[
       this.enrollments.length - 1

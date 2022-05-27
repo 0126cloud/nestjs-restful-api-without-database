@@ -15,7 +15,9 @@ import { ParseParamIdDto } from '../dto';
 import { CreateUserDto, QueryUserDto, UpdateUserDto } from './dto';
 import { UsersService } from './users.service';
 import { BearerAuthGuard } from '../auth/bearerAuth.guard';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('user')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -29,11 +31,13 @@ export class UsersController {
     return this.service.getUsersWithQuery(query);
   }
 
+  @ApiParam({ name: 'id', type: 'number' })
   @Get(':id')
   async getUserById(@Param() param: ParseParamIdDto) {
     return this.service.getUserById(param.id);
   }
 
+  @ApiParam({ name: 'id', type: 'number' })
   @Get(':id/courses')
   async getCoursesByUserId(@Param() param: ParseParamIdDto) {
     this.service.getUserById(param.id);
@@ -44,12 +48,15 @@ export class UsersController {
     return this.courseService.getCoursesByIds(ids);
   }
 
+  @ApiBearerAuth()
   @UseGuards(BearerAuthGuard)
   @Post()
   async createUser(@Body() body: CreateUserDto) {
     return this.service.createUser(body);
   }
 
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: 'number' })
   @UseGuards(BearerAuthGuard)
   @Patch(':id')
   async updateUserById(
@@ -59,6 +66,8 @@ export class UsersController {
     return this.service.updateUserById(param.id, dto);
   }
 
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: 'number' })
   @UseGuards(BearerAuthGuard)
   @Delete(':id')
   async deleteUserById(@Param() param: ParseParamIdDto) {
